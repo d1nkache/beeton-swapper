@@ -1,4 +1,4 @@
 Main.class
 wrappers\WalletImpl.class
 model\Tuple.class
-Wallet.class
+wrappers\Wallet.class

@@ -1,6 +1,7 @@
 import wrappers.WalletImpl;
 import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.smartcontract.types.WalletConfig;
 import org.ton.ton4j.smartcontract.types.WalletV4R2Config;
 
 import java.math.BigInteger;
@@ -16,16 +17,16 @@ public class Main {
         );
 
         WalletImpl wallet = new WalletImpl(mnemonic, true);
-        long seqno = wallet.asWalletV4R2().getSeqno();
+        long seqno = wallet.asWalletContract().getSeqno();
 
-        WalletV4R2Config config = WalletImpl.buildConfig(
+        WalletConfig config = wallet.buildConfig(
                 Address.of("UQCdnvsDd_mmIjnaWtDIZLimrScNF8z56ydBLUcnjHqOh6PP"), // адрес получателя
-                BigInteger.valueOf(1_000_000_0L),       // 1 TON = 1e9 нанотонов
-                seqno,                                        // seqno
-                698983191L,                               // walletId
+                BigInteger.valueOf(1_000_000_0L),                               // 1 TON = 1e9 нанотонов
+                seqno,                                                          // seqno
+                698983191L,                                                     // walletId
                 "Test message",
-                true,                                     // bounce
-                SendMode.PAY_GAS_SEPARATELY               // режим отправки
+                true,                                                           // bounce
+                SendMode.PAY_GAS_SEPARATELY                                     // режим отправки
         );
 
         var response = wallet.sendMessage(config);
