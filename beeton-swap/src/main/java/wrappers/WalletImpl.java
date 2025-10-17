@@ -86,7 +86,6 @@ public class WalletImpl implements Wallet {
             .build();
     }
 
-    // Дополнительная удобная версия
     public static WalletConfig buildConfig(
         Address destination,
         BigInteger amount,

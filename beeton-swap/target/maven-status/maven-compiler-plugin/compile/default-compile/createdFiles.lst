@@ -1,4 +1,7 @@
 Main.class
 wrappers\WalletImpl.class
 model\Tuple.class
+service\SwapService.class
 wrappers\Wallet.class
+client\DedustClient.class
+service\SwapServiceImpl.class

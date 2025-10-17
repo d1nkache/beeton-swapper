@@ -12,7 +12,7 @@ import org.ton.ton4j.smartcontract.wallet.Contract;
 import model.Tuple;
 
 
-interface Wallet {
+public interface Wallet {
     public Contract asWalletContract();
     public Tuple<Long, String> sendMessage(WalletConfig config);
 
