@@ -18,6 +18,11 @@ public class DedustClient {
 
     }
 
+
+    // private String getJettonWalletAddress(String jettonMinter, String walletAddress) {
+
+    // }
+
     
     private String getVaultAddress(String dedustContractAddress, String jettonMinterAddress) {
         String body = String.format("""

@@ -2,6 +2,7 @@ Main.class
 wrappers\WalletImpl.class
 model\Tuple.class
 service\SwapService.class
+servlets\SwapServlet.class
 wrappers\Wallet.class
 client\DedustClient.class
 service\SwapServiceImpl.class
