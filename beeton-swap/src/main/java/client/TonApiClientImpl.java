@@ -5,26 +5,58 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandler;
 
 import org.json.JSONObject;
+import org.ton.ton4j.address.Address;
 
 
-public class DedustClient {
+public class TonApiClientImpl implements TonApiClient {
     private static final String BASE_URL = "https://tonapi.io/v2";
     private final HttpClient client = HttpClient.newHttpClient();
 
-    public void swapDedust(String codeA, String codeB) {
 
+    public String getJettonWalletAddress(String jettonMinterAddress, Address walletAddress) {
+        String body = String.format("""
+                {
+                  "args": [
+                    {
+                      "type": "slice",
+                      "value": "%s"
+                    }
+                  ]
+                }
+                """, jettonMinterAddress
+        );
+
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(
+                BASE_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_vault_address?decode=true")
+            )
+            .header("accept", "application/json")
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build();
+        
+        try {
+            String response = this.client.send(request, HttpResponse.BodyHandlers.ofString()).toString();
+            
+            JSONObject obj = new JSONObject(response);
+            String jettonWalletAddress = obj
+                    .getJSONObject("decoded")
+                    .getString("jetton_wallet_address");
+
+            System.out.println("Wallet address: " + jettonWalletAddress);
+
+            return jettonWalletAddress;
+        }
+        catch(IOException | InterruptedException ex) {
+            System.out.println("ERROR - " + ex.getMessage());
+            return "ERROR";
+        }
     }
 
-
-    // private String getJettonWalletAddress(String jettonMinter, String walletAddress) {
-
-    // }
-
     
-    private String getVaultAddress(String dedustContractAddress, String jettonMinterAddress) {
+    public String getVaultAddress(String dedustContractAddress, String jettonMinterAddress) {
         String body = String.format("""
                 {
                   "args": [
@@ -65,7 +97,7 @@ public class DedustClient {
     }
 
 
-    private String getPoolAddress(String dedustContractAddress, String from, String to) {
+    public String getPoolAddress(String dedustContractAddress, String from, String to) {
         int poolType = 0; // 0 = VOLATILE, 1 = STABLE
 
         String body = String.format("""

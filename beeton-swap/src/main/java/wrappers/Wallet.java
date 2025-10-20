@@ -15,7 +15,7 @@ import model.Tuple;
 public interface Wallet {
     public Contract asWalletContract();
     public Tuple<Long, String> sendMessage(WalletConfig config);
-
+    public Address getWalletAddress();
     public WalletConfig buildConfig(
         Address destination,
         BigInteger amount,

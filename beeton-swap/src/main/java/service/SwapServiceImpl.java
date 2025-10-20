@@ -2,6 +2,10 @@ package service;
 
 import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.cell.CellBuilder;
+import org.ton.ton4j.smartcontract.SendMode;
+import org.ton.ton4j.smartcontract.types.WalletV4R2Config;
+
+import client.TonApiClient;
 
 import java.math.BigInteger;
 
@@ -9,20 +13,55 @@ import org.ton.ton4j.address.Address;
 import wrappers.Wallet;
 
 public class SwapServiceImpl{
-    private Wallet wallet;
+    private static final String  DEDUST_CONTRACT_ADDRESS = "EQCXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
+    private static final Integer VAULT_SWAP_OP_CODE      = 0xe3a0d482; 
 
-    public SwapServiceImpl(Wallet wallet) {
+    private Wallet wallet;
+    private TonApiClient tonApiClient;
+
+    public SwapServiceImpl(Wallet wallet, TonApiClient tonApiClient) {
         this.wallet = wallet;
+        this.tonApiClient = tonApiClient;
     }
 
-    // public void desustSwap(
-    //     String codeJettonA,
-    //     String codeJettonB,
-    // ) {
-    //     return;
-    //     // poolAddress 
-    //     // vaultAddress
-    // }
+    public void desustSwap(
+        String jettonA, 
+        String jettonB,
+        BigInteger jettonAmount
+    ) {
+        String vaultAddress = this.tonApiClient.getVaultAddress(DEDUST_CONTRACT_ADDRESS, jettonA);
+        String poolAddress  = this.tonApiClient.getPoolAddress(DEDUST_CONTRACT_ADDRESS, jettonA, jettonB);
+        // String jettonMinterAddress  = this.tonApiClient.getMinterAddress(jettonAddress)
+        String jettonAWalletAddress  = this.tonApiClient.getJettonWalletAddress(jettonA, this.wallet.getWalletAddress());
+        String jettonBWalletAddress  = this.tonApiClient.getJettonWalletAddress(jettonB, this.wallet.getWalletAddress());
+
+        this.buildSwapBody(
+            jettonAmount, 
+            VAULT_SWAP_OP_CODE,
+            0,
+            Address.of(poolAddress), 
+            BigInteger.ZERO, 
+            null, 
+            0, 
+            Address.of(jettonBWalletAddress), 
+            null, 
+            null, 
+            null
+        );
+
+        WalletV4R2Config walletSendConfig = (WalletV4R2Config) this.wallet.buildConfig(
+            Address.of(vaultAddress),
+            jettonAmount,
+            0L,
+            0L,
+            jettonAWalletAddress,
+            false,
+            SendMode.PAY_GAS_SEPARATELY
+        );
+
+        this.wallet.sendMessage(walletSendConfig);
+        return; 
+    }
 
 
     private CellBuilder buildSwapStep(
@@ -38,6 +77,7 @@ public class SwapServiceImpl{
                 .storeRefMaybe(multiStep)
         );
     }
+
 
     private Cell buldSwapParams(
         int deadline,
@@ -56,6 +96,7 @@ public class SwapServiceImpl{
             .endCell()
         );
     }
+
 
     private Cell buildSwapBody(
         BigInteger jettonAmount,
@@ -88,5 +129,4 @@ public class SwapServiceImpl{
 
         return body;
     }
-
 }

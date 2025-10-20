@@ -36,6 +36,8 @@ public class WalletImpl implements Wallet {
     private byte[] secretKey;
     private boolean isTestnet;
 
+    public Address walletAddress;
+      
     public WalletImpl(List<String> mnemonic, boolean isTestnet) {
         this.tonLib = Tonlib.builder()
             .pathToTonlibSharedLib("tonlibjson.dll")
@@ -43,8 +45,21 @@ public class WalletImpl implements Wallet {
             .build();
 
         Pair keyPair = mnemonicToKeyPair(mnemonic);
+        
+        this.isTestnet = isTestnet;
         this.publicKey = keyPair.getPublicKey();
         this.secretKey = keyPair.getSecretKey();
+    }
+
+    @Override
+    public Address getWalletAddress() {
+        if (this.walletAddress == null) {
+            this.walletAddress = this.asWalletContract().getAddress();
+
+            return walletAddress;
+        }
+        
+        return this.walletAddress;
     }
 
     @Override
