@@ -8,7 +8,7 @@
     <groupId>com.beeton</groupId>
     <artifactId>beeton-swap-api</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>war</packaging>
+    <packaging>jar</packaging>
 
     <name>beeton-swap-api</name>
     <url>http://beeton.com</url>
@@ -19,6 +19,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <servlet.version>4.0.1</servlet.version>
         <json.version>20240303</json.version>
+        <exec.mainClass>Main</exec.mainClass>
     </properties>
 
     <dependencies>
@@ -64,7 +65,7 @@
             <scope>test</scope>
         </dependency>
         
-        <!-- ✅ Для тестирования сервлетов -->
+        <!-- ✅ Для тестирования -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
@@ -89,24 +90,45 @@
                 </configuration>
             </plugin>
 
-            <!-- ✅ Сборка WAR -->
+            <!-- ✅ Плагин для создания исполняемого JAR с исправлением signature files -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>3.3.2</version>
-                <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>Main</mainClass>
+                                </transformer>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
-            <!-- ✅ Плагин для запуска на embedded Tomcat -->
+            <!-- ✅ Плагин для запуска приложения -->
             <plugin>
-                <groupId>org.apache.tomcat.maven</groupId>
-                <artifactId>tomcat7-maven-plugin</artifactId>
-                <version>2.2</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
                 <configuration>
-                    <path>/</path>
-                    <port>8080</port>
+                    <mainClass>Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>

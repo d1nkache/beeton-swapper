@@ -15,19 +15,22 @@ public class Main {
         System.out.println("Starting Wallet Test...");
 
         List<String> mnemonic = List.of(
-
+            
         );
 
         WalletImpl wallet = new WalletImpl(mnemonic, true);
         long seqno = wallet.asWalletContract().getSeqno();
 
+        System.out.println(wallet.getWalletAddress());
+        System.out.println(seqno);
+
         WalletConfig config = wallet.buildConfig(
-                Address.of("UQCdnvsDd_mmIjnaWtDIZLimrScNF8z56ydBLUcnjHqOh6PP"),  // адрес получателя
+                Address.of("0QB6zEKUZAKBTboZvhXo0tALkzkHieuGsfMfisrBFIX5muxX"),  // адрес получателя
                 BigInteger.valueOf(1_000_000_0L),                                    // 1 TON = 1e9 нанотонов
                 seqno,                                                                   // seqno
                 698983191L,                                                     // walletId
                 "Test message",                                                  // 
-              true,                                                               // bounce
+                true,                                                             // bounce
                 SendMode.PAY_GAS_SEPARATELY                                              // режим отправки
         );
 
@@ -35,6 +38,6 @@ public class Main {
         System.out.println("Response: " + response.second);
 
         SwapServiceImpl swapServiceImpl = new SwapServiceImpl(wallet, new TonApiClientImpl());
-        swapServiceImpl.desustSwap("null", "null", BigInteger.ONE);
+        swapServiceImpl.desustSwap("EQCi9nWtRY5rdEWkZIPOe_9n1WXog8ObXCIf6RGmwFCnrrT8", "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs", BigInteger.ONE);
     }
 }

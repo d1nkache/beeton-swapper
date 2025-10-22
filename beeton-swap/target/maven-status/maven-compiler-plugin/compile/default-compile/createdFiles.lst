@@ -3,7 +3,6 @@ wrappers\WalletImpl.class
 model\Tuple.class
 client\TonApiClient.class
 service\SwapService.class
-servlets\SwapServlet.class
 wrappers\Wallet.class
 client\TonApiClientImpl.class
 service\SwapServiceImpl.class

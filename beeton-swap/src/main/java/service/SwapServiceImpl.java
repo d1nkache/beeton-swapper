@@ -13,8 +13,8 @@ import org.ton.ton4j.address.Address;
 import wrappers.Wallet;
 
 public class SwapServiceImpl{
-    private static final String  DEDUST_CONTRACT_ADDRESS = "EQCXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX";
-    private static final Integer VAULT_SWAP_OP_CODE      = 0xe3a0d482; 
+    private static final String  DEDUST_CONTRACT_ADDRESS = "EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67";
+    private static final Integer VAULT_SWAP_OP_CODE      = 0xe3a0d482 ; 
 
     private Wallet wallet;
     private TonApiClient tonApiClient;
@@ -30,10 +30,15 @@ public class SwapServiceImpl{
         BigInteger jettonAmount
     ) {
         String vaultAddress = this.tonApiClient.getVaultAddress(DEDUST_CONTRACT_ADDRESS, jettonA);
+        System.out.println("Vault address -> " + vaultAddress);
         String poolAddress  = this.tonApiClient.getPoolAddress(DEDUST_CONTRACT_ADDRESS, jettonA, jettonB);
+        System.out.println("Pool address -> " + poolAddress);
+
         // String jettonMinterAddress  = this.tonApiClient.getMinterAddress(jettonAddress)
         String jettonAWalletAddress  = this.tonApiClient.getJettonWalletAddress(jettonA, this.wallet.getWalletAddress());
+        System.out.println("jw A address -> " + jettonAWalletAddress);
         String jettonBWalletAddress  = this.tonApiClient.getJettonWalletAddress(jettonB, this.wallet.getWalletAddress());
+        System.out.println("jw B address -> " + jettonBWalletAddress);
 
         this.buildSwapBody(
             jettonAmount, 
@@ -121,7 +126,7 @@ public class SwapServiceImpl{
         );
 
         CellBuilder builder = CellBuilder.beginCell()
-                .storeUint(opCode, 32)
+                .storeUint(opCode & 0xFFFFFFFFL, 32)
                 .storeUint(queryId, 64)
                 .storeCoins(jettonAmount);
 

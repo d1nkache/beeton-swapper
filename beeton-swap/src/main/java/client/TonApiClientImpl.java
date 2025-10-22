@@ -11,7 +11,7 @@ import org.ton.ton4j.address.Address;
 
 
 public class TonApiClientImpl implements TonApiClient {
-    private static final String BASE_URL = "https://tonapi.io/v2";
+    private static final String BASE_URL = "https://tonapi.io/v2/";
     private final HttpClient client = HttpClient.newHttpClient();
 
 
@@ -30,7 +30,7 @@ public class TonApiClientImpl implements TonApiClient {
 
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(
-                BASE_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_vault_address?decode=true")
+                BASE_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_wallet_address?decode=true")
             )
             .header("accept", "application/json")
             .header("Content-Type", "application/json")
@@ -38,8 +38,11 @@ public class TonApiClientImpl implements TonApiClient {
             .build();
         
         try {
-            String response = this.client.send(request, HttpResponse.BodyHandlers.ofString()).toString();
+            String response = this.client.send(request, HttpResponse.BodyHandlers.ofString()).body();
             
+            System.out.println(BASE_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_wallet_address?decode=true");
+            System.out.println(response);
+
             JSONObject obj = new JSONObject(response);
             String jettonWalletAddress = obj
                     .getJSONObject("decoded")
@@ -79,8 +82,11 @@ public class TonApiClientImpl implements TonApiClient {
             .build();
         
         try {
-            String response = this.client.send(request, HttpResponse.BodyHandlers.ofString()).toString();
+            String response = this.client.send(request, HttpResponse.BodyHandlers.ofString()).body();
             
+            System.out.println(BASE_URL + "blockchain/accounts/" + dedustContractAddress + "/methods/get_vault_address?decode=true");
+            System.out.println(response);
+
             JSONObject obj = new JSONObject(response);
             String vaultAddress = obj
                     .getJSONObject("decoded")
@@ -98,52 +104,41 @@ public class TonApiClientImpl implements TonApiClient {
 
 
     public String getPoolAddress(String dedustContractAddress, String from, String to) {
-        int poolType = 0; // 0 = VOLATILE, 1 = STABLE
+        int poolType = 0;
 
-        String body = String.format("""
-                {
-                "args": [
-                    {
-                    "type": "slice",
-                    "value": "%d"
-                    },
-                    {
-                    "type": "slice",
-                    "value": "%s"
-                    },
-                    {
-                    "type": "slice",
-                    "value": "%s"
-                    }
-                ]
-                }
-                """, poolType, from, to
-        );
+        String url = BASE_URL
+                + "blockchain/accounts/"
+                + dedustContractAddress
+                + "/methods/get_pool_address?decode=true"
+                + "&args=" + java.net.URLEncoder.encode(String.valueOf(poolType), java.nio.charset.StandardCharsets.UTF_8)
+                + "&args=" + java.net.URLEncoder.encode(from,        java.nio.charset.StandardCharsets.UTF_8)
+                + "&args=" + java.net.URLEncoder.encode(to,          java.nio.charset.StandardCharsets.UTF_8);
 
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(
-                BASE_URL + "blockchain/accounts/" + dedustContractAddress + "/methods/get_pool_address?decode=true")
-            )
-            .header("accept", "application/json")
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build();
-        
+                .uri(URI.create(url))
+                .header("accept", "application/json")
+                .GET()
+                .build();
+
         try {
-            String response = this.client.send(request, HttpResponse.BodyHandlers.ofString()).toString();
-            
-            JSONObject obj = new JSONObject(response);
-            String poolAddress = obj
-                    .getJSONObject("decoded")
-                    .getString("pool_address");
+            HttpResponse<String> httpResponse = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+            String response = httpResponse.body();
 
+            System.out.println("GET " + url);
+            System.out.println("HTTP " + httpResponse.statusCode() + " :: " + response);
+
+            if (httpResponse.statusCode() != 200) {
+                return "ERROR_HTTP_" + httpResponse.statusCode();
+            }
+
+            org.json.JSONObject obj = new org.json.JSONObject(response);
+            String poolAddress = obj.getJSONObject("decoded").getString("pool_address");
             System.out.println("pool_address: " + poolAddress);
-
             return poolAddress;
-        }
-        catch(IOException | InterruptedException ex) {
+        } catch (IOException | InterruptedException ex) {
             System.out.println("ERROR - " + ex.getMessage());
             return "ERROR";
         }
     }
+
 }
