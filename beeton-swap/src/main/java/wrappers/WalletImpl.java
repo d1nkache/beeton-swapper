@@ -3,7 +3,7 @@ package wrappers;
 import java.nio.file.*;
 import model.Tuple;
 import org.ton.ton4j.tonlib.Tonlib;
-
+import org.ton.ton4j.tonlib.types.globalconfig.TonlibConfig;
 import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.wallet.Contract;
@@ -32,6 +32,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class WalletImpl implements Wallet {
     private Tonlib tonLib;
+
     private byte[] publicKey;
     private byte[] secretKey;
     private boolean isTestnet;
@@ -40,6 +41,7 @@ public class WalletImpl implements Wallet {
       
     public WalletImpl(List<String> mnemonic, boolean isTestnet) {
         this.tonLib = Tonlib.builder()
+            .pathToGlobalConfig("global.config_custom.json")
             .pathToTonlibSharedLib("tonlibjson.dll")
             .testnet(isTestnet)
             .build();
@@ -76,10 +78,20 @@ public class WalletImpl implements Wallet {
 
     @Override
     public Tuple<Long, String> sendMessage(WalletConfig config) {
+        System.out.println("=== sendMessage START ===");
+        System.out.println("Wallet config: " + config);
+
         WalletV4R2 wallet = this.asWalletContract();
+        System.out.println("Wallet instance created: " + wallet);
+
         SendResponse response = wallet.send((WalletV4R2Config) config);
+        System.out.println("Send response code: " + response.getCode());
+        System.out.println("Send response message: " + response.getMessage());
+        System.out.println("=== sendMessage END ===");
+
         return new Tuple<>((long) response.getCode(), response.getMessage());
     }
+
 
     @Override
     public WalletConfig buildConfig(
@@ -101,7 +113,8 @@ public class WalletImpl implements Wallet {
             .build();
     }
 
-    public static WalletConfig buildConfig(
+    @Override
+    public WalletConfig buildConfig(
         Address destination,
         BigInteger amount,
         long seqno,

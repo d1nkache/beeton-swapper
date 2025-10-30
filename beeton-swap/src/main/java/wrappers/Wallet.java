@@ -3,6 +3,7 @@ package wrappers;
 import java.math.BigInteger;
 
 import org.ton.ton4j.address.Address;
+import org.ton.ton4j.cell.Cell;
 import org.ton.ton4j.smartcontract.SendMode;
 import org.ton.ton4j.smartcontract.SendResponse;
 import org.ton.ton4j.smartcontract.types.WalletConfig;
@@ -24,5 +25,15 @@ public interface Wallet {
         String comment,
         boolean bounce,
         SendMode sendMode
+    );
+    public WalletConfig buildConfig(
+        Address destination,
+        BigInteger amount,
+        long seqno,
+        long walletId,
+        String comment,
+        boolean bounce,
+        SendMode sendMode,
+        Cell body
     );
 }

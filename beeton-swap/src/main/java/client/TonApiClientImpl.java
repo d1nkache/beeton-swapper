@@ -18,91 +18,87 @@ public class TonApiClientImpl implements TonApiClient {
     public String getJettonWalletAddress(String jettonMinterAddress, Address walletAddress) {
         String body = String.format("""
                 {
-                  "args": [
+                "args": [
                     {
-                      "type": "slice",
-                      "value": "%s"
+                    "type": "slice",
+                    "value": "%s"
                     }
-                  ]
+                ]
                 }
-                """, jettonMinterAddress
+                """, walletAddress.toString(false)
         );
 
+        String url = BASE_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_wallet_address?decode=true";
+
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(
-                BASE_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_wallet_address?decode=true")
-            )
+            .uri(URI.create(url))
             .header("accept", "application/json")
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(body))
             .build();
-        
-        try {
-            String response = this.client.send(request, HttpResponse.BodyHandlers.ofString()).body();
-            
-            System.out.println(BASE_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_wallet_address?decode=true");
-            System.out.println(response);
 
-            JSONObject obj = new JSONObject(response);
+        try {
+            // Отправляем запрос
+            HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+
+
+            if (response.statusCode() != 200) {
+                return "ERROR";
+            }
+
+            JSONObject obj = new JSONObject(response.body());
             String jettonWalletAddress = obj
                     .getJSONObject("decoded")
                     .getString("jetton_wallet_address");
 
-            System.out.println("Wallet address: " + jettonWalletAddress);
-
             return jettonWalletAddress;
-        }
-        catch(IOException | InterruptedException ex) {
-            System.out.println("ERROR - " + ex.getMessage());
+
+        } catch (IOException | InterruptedException ex) {
+            System.out.println("\n[ERROR] Network/IO exception:");
+            ex.printStackTrace();
+            return "ERROR";
+        } catch (Exception ex) {
+            System.out.println("\n[ERROR] Unexpected exception:");
+            ex.printStackTrace();
             return "ERROR";
         }
     }
 
-    
-    public String getVaultAddress(String dedustContractAddress, String jettonMinterAddress) {
-        String body = String.format("""
-                {
-                  "args": [
-                    {
-                      "type": "slice",
-                      "value": "%s"
-                    }
-                  ]
-                }
-                """, jettonMinterAddress
+    public String getVaultAddress(String dedustContractAddress, String jettonHexArg) {
+        String url = String.format(
+            "%sblockchain/accounts/%s/methods/get_vault_address?args=%s",
+            BASE_URL, dedustContractAddress, jettonHexArg
         );
 
         HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(
-                BASE_URL + "blockchain/accounts/" + dedustContractAddress + "/methods/get_vault_address?decode=true")
-            )
+            .uri(URI.create(url))
             .header("accept", "application/json")
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .GET()
             .build();
-        
+
         try {
-            String response = this.client.send(request, HttpResponse.BodyHandlers.ofString()).body();
-            
-            System.out.println(BASE_URL + "blockchain/accounts/" + dedustContractAddress + "/methods/get_vault_address?decode=true");
-            System.out.println(response);
+            HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            JSONObject obj = new JSONObject(response);
-            String vaultAddress = obj
-                    .getJSONObject("decoded")
-                    .getString("vault_addr");
+            if (response.statusCode() != 200) {
+                System.out.println("Request failed: " + response.statusCode());
+                System.out.println(response.body());
+                return "ERROR";
+            }
 
-            System.out.println("Vault address: " + vaultAddress);
+            JSONObject obj = new JSONObject(response.body());
 
-            return vaultAddress;
+            if (obj.has("decoded")) {
+                return obj.getJSONObject("decoded").optString("vault_addr", "UNKNOWN");
+            }
+
+            return response.body();
         }
-        catch(IOException | InterruptedException ex) {
+        catch (IOException | InterruptedException ex) {
             System.out.println("ERROR - " + ex.getMessage());
             return "ERROR";
         }
     }
-
-
+    
     public String getPoolAddress(String dedustContractAddress, String from, String to) {
         int poolType = 0;
 
@@ -111,15 +107,15 @@ public class TonApiClientImpl implements TonApiClient {
                 + dedustContractAddress
                 + "/methods/get_pool_address?decode=true"
                 + "&args=" + java.net.URLEncoder.encode(String.valueOf(poolType), java.nio.charset.StandardCharsets.UTF_8)
-                + "&args=" + java.net.URLEncoder.encode(from,        java.nio.charset.StandardCharsets.UTF_8)
-                + "&args=" + java.net.URLEncoder.encode(to,          java.nio.charset.StandardCharsets.UTF_8);
-
+                + "&args=" + java.net.URLEncoder.encode(from,java.nio.charset.StandardCharsets.UTF_8)
+                + "&args=" + java.net.URLEncoder.encode(to,java.nio.charset.StandardCharsets.UTF_8);
+        
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("accept", "application/json")
                 .GET()
                 .build();
-
+        
         try {
             HttpResponse<String> httpResponse = this.client.send(request, HttpResponse.BodyHandlers.ofString());
             String response = httpResponse.body();
