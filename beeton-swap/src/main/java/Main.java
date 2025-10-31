@@ -15,8 +15,8 @@ public class Main {
         System.out.println("Starting Wallet Test...");
 
         List<String> mnemonic = List.of(
-
         );
+
 
 
 
@@ -41,11 +41,18 @@ public class Main {
         // System.out.println("Response: " + response.second);
 
         SwapServiceImpl swapServiceImpl = new SwapServiceImpl(wallet, new TonApiClientImpl());
-        swapServiceImpl.desustSwapSell(
-            "EQCi9nWtRY5rdEWkZIPOe_9n1WXog8ObXCIf6RGmwFCnrrT8",
+        // swapServiceImpl.desustSwapSell(
+        //     "EQCi9nWtRY5rdEWkZIPOe_9n1WXog8ObXCIf6RGmwFCnrrT8",
+        //     "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
+        //     "native",
+        //     BigInteger.valueOf(100_000_000L)
+        // );
+
+        swapServiceImpl.desustSwapBuy(
             "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
-            "native",
-            BigInteger.valueOf(100_000_000L)
+            "EQCi9nWtRY5rdEWkZIPOe_9n1WXog8ObXCIf6RGmwFCnrrT8",
+            "multi",
+            BigInteger.valueOf(100_000L)
         );
     }
 }

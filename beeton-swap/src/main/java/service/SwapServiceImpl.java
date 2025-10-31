@@ -17,9 +17,9 @@ import wrappers.Wallet;
 
 public class SwapServiceImpl{
     private static final String  DEDUST_CONTRACT_ADDRESS = "EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67";
-    private static final int     VAULT_JETTON_SWAP_OP     = 0xe3a0d482;
-    private static final int     VAULT_NATIVE_SWAP_OP     = 0xea06185d;
-    private static final int     POOL_TYPE_VOLATILE       = 0;
+    private static final int     VAULT_JETTON_SWAP_OP    = 0xe3a0d482;
+    private static final int     VAULT_NATIVE_SWAP_OP    = 0xea06185d;
+    private static final int     POOL_TYPE_VOLATILE      = 0;
 
     private Wallet wallet;
     private TonApiClient tonApiClient;
@@ -42,9 +42,6 @@ public class SwapServiceImpl{
         String vaultAddress         = null;
         String poolAddressFirstStep = null;
         Cell   multiStep            = null;
-        
-        System.out.println(assetJettonA);
-        System.out.println(assetJettonB);
 
         if (swapType.equals("native")) {
             vaultAddress = this.tonApiClient.getVaultAddress(DEDUST_CONTRACT_ADDRESS, assetJettonA);
@@ -64,10 +61,10 @@ public class SwapServiceImpl{
         }
         else {
             System.out.println("ERROR");
+            return;
         }
 
         String jettonAWalletAddress  = this.tonApiClient.getJettonWalletAddress(jettonA, this.wallet.getWalletAddress());
-        System.out.println("jw A address -> " + jettonAWalletAddress);
 
         Cell jettonSwapBody = this.buildJettonSwapBody(
             jettonAmount, 
@@ -98,7 +95,7 @@ public class SwapServiceImpl{
             BigInteger.valueOf(500_000_000L),
             wallet.asWalletContract().getSeqno(),
             698983191L,
-            jettonAWalletAddress,
+            "comment",
             false,
             SendMode.PAY_GAS_SEPARATELY,
             jettonTransferBody
@@ -108,6 +105,63 @@ public class SwapServiceImpl{
 
         return; 
     }
+
+    public void desustSwapBuy(
+        String jettonA, 
+        String jettonB,
+        String swapType,
+        BigInteger jettonAmount
+    ) { 
+        String assetJettonA = fromJettonToAssetHex(jettonA, false);
+        String assetJettonB = fromJettonToAssetHex(jettonB, false);
+        String assetNative  = fromJettonToAssetHex(null, true);
+
+        String vaultAddress         = null;
+        String poolAddressFirstStep = null;
+        Cell   multiStep            = null;
+
+        if (swapType.equals("native")) {
+            vaultAddress = this.tonApiClient.getVaultAddress(DEDUST_CONTRACT_ADDRESS, assetNative);
+            poolAddressFirstStep = this.tonApiClient.getPoolAddress(DEDUST_CONTRACT_ADDRESS, assetNative, assetJettonA);
+        }
+        else if (swapType.equals("multi")) {               
+            this.buyViaJetton(jettonA, assetJettonA, assetJettonB, assetNative, jettonAmount);
+            return;
+        }
+        else {
+            System.out.println("ERROR");
+            return;
+        }
+
+        Cell nativeSwapBody = this.buildNativeSwapBody(
+            VAULT_NATIVE_SWAP_OP,
+            0L,
+            jettonAmount,
+            Address.of(poolAddressFirstStep),     
+            BigInteger.ZERO,
+            multiStep,
+            0,
+            Address.of(this.wallet.getWalletAddress()),
+            null,
+            null
+        );
+        
+        WalletV4R2Config walletSendConfig = (WalletV4R2Config) this.wallet.buildConfig(
+            Address.of(vaultAddress),
+            BigInteger.valueOf(250_000_000L),
+            wallet.asWalletContract().getSeqno(),
+            698983191L,
+            "comment",
+            true,
+            SendMode.PAY_GAS_SEPARATELY,
+            nativeSwapBody
+        );
+
+        this.wallet.sendMessage(walletSendConfig);
+
+        return; 
+    }
+
 
     public String fromJettonToAssetHex(String jettonA, boolean isNative) {
         Cell cell;
@@ -135,6 +189,64 @@ public class SwapServiceImpl{
         return sb.toString();
     }
 
+    private void buyViaJetton(
+        String jettonA, 
+        String assetJettonA,
+        String assetJettonB,
+        String assetNative,
+        BigInteger jettonAmount
+    ) {
+        String vaultAddress = this.tonApiClient.getVaultAddress(DEDUST_CONTRACT_ADDRESS, assetJettonA);
+        String poolAddressFirstStep = this.tonApiClient.getPoolAddress(DEDUST_CONTRACT_ADDRESS, assetJettonA, assetNative);
+        String poolAddressSecondStep = this.tonApiClient.getPoolAddress(DEDUST_CONTRACT_ADDRESS, assetNative, assetJettonB);
+                
+        Cell multiStep = CellBuilder.beginCell()
+            .storeAddress(Address.of(poolAddressSecondStep))
+            .storeUint(0, 1)
+            .storeCoins(BigInteger.ZERO)             
+            .storeRefMaybe(null)                        
+        .endCell();
+
+        Cell jettonSwapBody = this.buildJettonSwapBody(
+            jettonAmount, 
+            VAULT_JETTON_SWAP_OP,
+            0,
+            Address.of(poolAddressFirstStep), 
+            BigInteger.ZERO, 
+            multiStep, 
+            0, 
+            Address.of(this.wallet.getWalletAddress()),  // Address recipientAddress,
+            null, 
+            null, 
+            null
+        );
+
+        String jettonAWalletAddress  = this.tonApiClient.getJettonWalletAddress(jettonA, this.wallet.getWalletAddress());
+
+        Cell jettonTransferBody = buildJettonTransferBody(
+            Address.of(vaultAddress),
+            jettonAmount,
+            0,
+            Address.of(this.wallet.getWalletAddress()),
+            null,
+            BigInteger.valueOf(250_000_000L),
+            jettonSwapBody
+        );
+
+        WalletV4R2Config walletSendConfig = (WalletV4R2Config) this.wallet.buildConfig(
+            Address.of(jettonAWalletAddress),
+            BigInteger.valueOf(270_000_000L),
+            wallet.asWalletContract().getSeqno(),
+            698983191L,
+            "comment",
+            true,
+            SendMode.PAY_GAS_SEPARATELY,
+            jettonTransferBody
+        );
+
+        this.wallet.sendMessage(walletSendConfig);
+    }
+
     private Cell buildJettonTransferBody(
         Address destination,
         BigInteger amount,
@@ -158,10 +270,10 @@ public class SwapServiceImpl{
         );
     }
 
-    private Cell buildNativeSwapBody (
+    private Cell buildNativeSwapBody(
         int opCode,
         long queryId,
-        BigInteger jettonAmount,
+        BigInteger amountTon,
         Address poolAddress,
         BigInteger limit,
         Cell multiStep,
@@ -179,16 +291,17 @@ public class SwapServiceImpl{
         .endCell();
 
         return CellBuilder.beginCell()
-            .storeUint(VAULT_NATIVE_SWAP_OP & 0xFFFFFFFFL, 32)
+            .storeUint(opCode & 0xFFFFFFFFL, 32) // 0xea06185d
             .storeUint(queryId, 64)
-            .storeCoins(jettonAmount)                           
-            .storeAddress(poolAddress)                    
-            .storeUint(0, 1)             
-            .storeCoins(limit)                            
-            .storeRefMaybe(multiStep)                     
-            .storeRef(swapParams)
+            .storeCoins(amountTon)               // ВАЖНО: у native это в теле!
+            .storeAddress(poolAddress)           // SwapStep.pool_addr (инлайн)
+            .storeUint(0, 1)                     // kind = given_in
+            .storeCoins(limit)                   // limit = 0
+            .storeRefMaybe(multiStep)            // next:(Maybe ^SwapStep)
+            .storeRef(swapParams)                // ^SwapParams
         .endCell();
     }
+
 
     private Cell buildJettonSwapBody(
         BigInteger jettonAmount,
