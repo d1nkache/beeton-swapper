@@ -1,0 +1,249 @@
+openapi: 3.0.3
+info:
+  title: Beeton Swap API
+  version: 1.1.0
+  description: |
+    REST API для обмена **jetton**-токенов через децентрализованный сервис **Beeton Swap** (роутинг через DeDust).
+    Эндпоинт синхронный: возвращает результат отправки транзакции кошельком сервера.
+
+    Примечание о совместимости:
+    - Ранее использовалось поле `swapType` со значениями `buy|sell`. В фактическом коде сервиса
+      оно применялось как тип **маршрута** (`native|multi`). С версии 1.1.0:
+        - Направление сделки задаётся полем `direction: buy|sell`.
+        - Тип маршрута задаётся полем `route: native|multi`.
+        - Поле `swapType` помечено как `deprecated` и при наличии будет интерпретировано как `route`.
+servers:
+  - url: http://localhost:8080/beeton-swap-api
+    description: Локальный сервер разработки
+
+tags:
+  - name: Swap
+    description: Операции обмена jetton↔jetton и jetton↔TON (native)
+
+paths:
+  /swap/desust:
+    post:
+      operationId: createSwap
+      summary: Совершить обмен (swap)
+      description: |
+        Выполняет обмен между **jettonA** и **jettonB** через DeDust:
+        - `direction=buy` — получить **jettonB** за счёт продажи **jettonA**/TON;
+        - `direction=sell` — продать **jettonA** за **jettonB**/TON.
+        - `route=native` — роутинг через пул с native-активом (TON);
+        - `route=multi` — многошаговый роутинг (например: A→TON→B).
+
+        В текущей реализации сервер отправляет транзакцию своим кошельком.
+      tags: [Swap]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/RequestId'
+      requestBody:
+        required: true
+        description: Параметры операции обмена
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwapRequest'
+            examples:
+              buy_via_native:
+                summary: Купить jettonA за TON (маршрут native)
+                value:
+                  direction: buy
+                  route: native
+                  jettonA: "0:111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
+                  jettonB: "0:9999888877776666555544443333222211110000ffffeeeeddddccccbbbbaaaa"
+                  jettonAmount: "1000000000"
+              sell_via_multi:
+                summary: Продать jettonA за jettonB через TON (маршрут multi)
+                value:
+                  direction: sell
+                  route: multi
+                  jettonA: "0:111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
+                  jettonB: "0:9999888877776666555544443333222211110000ffffeeeeddddccccbbbbaaaa"
+                  jettonAmount: "2500000000"
+      responses:
+        '200':
+          description: Успешно инициирован обмен (транзакция отправлена)
+          headers:
+            X-Request-Id:
+              description: Эхо-идентификатор запроса для трассировки
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwapSuccessResponse'
+              examples:
+                ok:
+                  value:
+                    status: success
+                    direction: buy
+                    route: native
+                    jettonA: "0:1111222233334444..."
+                    jettonB: "0:9999888877776666..."
+                    jettonAmount: "1000000000"
+                    tx:
+                      walletAddress: "EQC…"
+                      seqno: 12345
+                      comment: "comment"
+        '400':
+          description: Ошибка запроса — отсутствуют или некорректны обязательные параметры
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_params:
+                  value:
+                    status: error
+                    code: "BAD_REQUEST"
+                    message: "Missing parameters: jettonA, jettonB, direction, route, jettonAmount"
+        '422':
+          description: Семантическая ошибка — параметры прошли синтаксис, но невалидны бизнес-логически
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_route:
+                  value:
+                    status: error
+                    code: "UNPROCESSABLE_ENTITY"
+                    message: "Route 'native' недоступен для указанной пары активов"
+        '500':
+          description: Внутренняя ошибка сервера при формировании/отправке транзакции
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                internal:
+                  value:
+                    status: error
+                    code: "INTERNAL_ERROR"
+                    message: "Unexpected server exception"
+
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: |
+        Ключ идемпотентности клиента. При повторной отправке с тем же значением
+        сервер должен выполнить операцию не более одного раза.
+      schema:
+        type: string
+        maxLength: 128
+    RequestId:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: Пользовательский корреляционный идентификатор для трассировки
+      schema:
+        type: string
+        maxLength: 128
+
+  schemas:
+    AddressHex:
+      type: string
+      description: |
+        Адрес jetton в формате `workchain:hash` (hex, 64 символа), например `0:abcd...`.
+        Для обменов с **native** активом в `jettonB` можно передавать любое значение.
+      example: "0:111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000"
+      pattern: '^[0-9-]+:[0-9a-fA-F]{64}$'
+
+    AmountAtomic:
+      type: string
+      description: Количество токенов в минимальных (атомарных) единицах
+      example: "1000000000"
+      pattern: '^[0-9]+$'
+
+    SwapDirection:
+      type: string
+      description: Направление сделки
+      enum: [buy, sell]
+      example: buy
+
+    SwapRoute:
+      type: string
+      description: Тип маршрута обмена
+      enum: [native, multi]
+      example: native
+
+    SwapRequest:
+      type: object
+      required:
+        - jettonA
+        - jettonB
+        - direction
+        - route
+        - jettonAmount
+      properties:
+        jettonA:
+          $ref: '#/components/schemas/AddressHex'
+          description: Адрес токена, который отдаётся при `sell` или покупается при `buy` (см. `route`)
+        jettonB:
+          $ref: '#/components/schemas/AddressHex'
+          description: Адрес токена, который требуется получить. Для обмена с native можно передать любое значение.
+        direction:
+          $ref: '#/components/schemas/SwapDirection'
+        route:
+          $ref: '#/components/schemas/SwapRoute'
+        jettonAmount:
+          $ref: '#/components/schemas/AmountAtomic'
+        swapType:
+          type: string
+          deprecated: true
+          description: |
+            **DEPRECATED.** Ранее использовалось вместо `route`.
+            Если отправлено, сервер трактует его как `route`.
+          enum: [native, multi]
+
+    SwapSuccessResponse:
+      type: object
+      required: [status, direction, route, jettonA, jettonB, jettonAmount]
+      properties:
+        status:
+          type: string
+          enum: [success]
+          example: success
+        direction:
+          $ref: '#/components/schemas/SwapDirection'
+        route:
+          $ref: '#/components/schemas/SwapRoute'
+        jettonA:
+          $ref: '#/components/schemas/AddressHex'
+        jettonB:
+          $ref: '#/components/schemas/AddressHex'
+        jettonAmount:
+          $ref: '#/components/schemas/AmountAtomic'
+        tx:
+          type: object
+          description: Служебная информация об отправленной транзакции (если доступна)
+          properties:
+            walletAddress:
+              type: string
+              example: "EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67"
+            seqno:
+              type: integer
+              example: 698983191
+            comment:
+              type: string
+              example: "comment"
+
+    ErrorResponse:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: string
+          enum: [error]
+          example: error
+        code:
+          type: string
+          description: Короткий код ошибки
+          example: BAD_REQUEST
+        message:
+          type: string
+          description: Человеко-читаемое описание ошибки
+          example: Missing parameters

@@ -38,7 +38,6 @@ public class TonApiClientImpl implements TonApiClient {
             .build();
 
         try {
-            // Отправляем запрос
             HttpResponse<String> response = this.client.send(request, HttpResponse.BodyHandlers.ofString());
 
 
