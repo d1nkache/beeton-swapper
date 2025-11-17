@@ -1,3 +1,4 @@
+model\SwapResponse.class
 wrappers\WalletImpl.class
 model\Tuple.class
 client\TonApiClient.class

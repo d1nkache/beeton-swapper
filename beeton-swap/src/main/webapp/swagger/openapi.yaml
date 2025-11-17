@@ -6,12 +6,9 @@ info:
     REST API для обмена **jetton**-токенов через децентрализованный сервис **Beeton Swap** (роутинг через DeDust).
     Эндпоинт синхронный: возвращает результат отправки транзакции кошельком сервера.
 
-    Примечание о совместимости:
-    - Ранее использовалось поле `swapType` со значениями `buy|sell`. В фактическом коде сервиса
-      оно применялось как тип **маршрута** (`native|multi`). С версии 1.1.0:
-        - Направление сделки задаётся полем `direction: buy|sell`.
-        - Тип маршрута задаётся полем `route: native|multi`.
-        - Поле `swapType` помечено как `deprecated` и при наличии будет интерпретировано как `route`.
+    Примечание:
+      - Направление сделки задаётся полем `direction: buy|sell`.
+      - Тип маршрута задаётся полем `route: native|multi`.
 servers:
   - url: http://localhost:8080/beeton-swap-api
     description: Локальный сервер разработки
@@ -34,9 +31,6 @@ paths:
 
         В текущей реализации сервер отправляет транзакцию своим кошельком.
       tags: [Swap]
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-        - $ref: '#/components/parameters/RequestId'
       requestBody:
         required: true
         description: Параметры операции обмена
@@ -64,10 +58,6 @@ paths:
       responses:
         '200':
           description: Успешно инициирован обмен (транзакция отправлена)
-          headers:
-            X-Request-Id:
-              description: Эхо-идентификатор запроса для трассировки
-              schema: { type: string }
           content:
             application/json:
               schema:
@@ -123,26 +113,6 @@ paths:
                     message: "Unexpected server exception"
 
 components:
-  parameters:
-    IdempotencyKey:
-      name: Idempotency-Key
-      in: header
-      required: false
-      description: |
-        Ключ идемпотентности клиента. При повторной отправке с тем же значением
-        сервер должен выполнить операцию не более одного раза.
-      schema:
-        type: string
-        maxLength: 128
-    RequestId:
-      name: X-Request-Id
-      in: header
-      required: false
-      description: Пользовательский корреляционный идентификатор для трассировки
-      schema:
-        type: string
-        maxLength: 128
-
   schemas:
     AddressHex:
       type: string

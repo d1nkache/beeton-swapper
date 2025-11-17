@@ -1,13 +1,9 @@
 package servlets;
 
 import java.util.List;
-
-import client.TonApiClientImpl;
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
-
 import java.math.BigInteger;
 
 import jakarta.servlet.http.HttpServlet;
@@ -21,9 +17,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import org.json.JSONObject;
 
+import client.TonApiClientImpl;
 import service.SwapServiceImpl;
-
 import wrappers.WalletImpl;
+import model.SwapResponse;
 
 
 @WebServlet("/swap/desust")
@@ -39,7 +36,7 @@ public class SwapServlet extends HttpServlet {
     private final WalletImpl wallet = new WalletImpl(mnemonic, false);
     private final SwapServiceImpl swapServiceImpl = new SwapServiceImpl(wallet, new TonApiClientImpl());
 
-    @Operation(summary = "Совершить swap", description = "Выполняет обмен jetton токенов")
+    @Operation(summary = "Совершить swap", description = "Выполняет обмен jetton-токенов")
     @ApiResponse(responseCode = "200", description = "Успешный обмен")
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -52,7 +49,7 @@ public class SwapServlet extends HttpServlet {
 
         try {
             StringBuilder sb = new StringBuilder();
-
+            
             try (BufferedReader reader = request.getReader()) {
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -61,36 +58,63 @@ public class SwapServlet extends HttpServlet {
             }
 
             JSONObject jsonRequest = new JSONObject(sb.toString());
-            
-            String jettonA = jsonRequest.optString("jettonA", null);
-            String jettonB = jsonRequest.optString("jettonB", null);
-            String swapType = jsonRequest.optString("swapType", null);
+
+            String jettonA         = jsonRequest.optString("jettonA", null);
+            String jettonB         = jsonRequest.optString("jettonB", null);
+            String direction       = jsonRequest.optString("direction", null);
+            String route           = jsonRequest.optString("route", null);
             String jettonAmountStr = jsonRequest.optString("jettonAmount", null);
 
-            if (jettonA == null || jettonB == null || swapType == null || jettonAmountStr == null) {
+            if (jettonA == null || jettonB == null || route == null || direction == null || jettonAmountStr == null) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-                out.println("{\"error\": \"Missing parameters\"}");
+                SwapResponse resp = new SwapResponse();
+                resp.setStatus("error");
+                resp.setMessage("Missing parameters: jettonA, jettonB, direction, route, jettonAmount");
+                out.println(new JSONObject(resp).toString());
+                return;
+            }
+
+            if (!(direction.equals("buy") || direction.equals("sell"))) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                SwapResponse resp = new SwapResponse();
+                resp.setStatus("error");
+                resp.setMessage("Invalid direction (must be 'buy' or 'sell')");
+                out.println(new JSONObject(resp).toString());
+                return;
+            }
+
+            if (!(route.equals("native") || route.equals("multi"))) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                SwapResponse resp = new SwapResponse();
+                resp.setStatus("error");
+                resp.setMessage("Invalid route (must be 'native' or 'multi')");
+                out.println(new JSONObject(resp).toString());
                 return;
             }
 
             BigInteger jettonAmount = new BigInteger(jettonAmountStr);
-            swapServiceImpl.desustSwapBuy(jettonA, jettonB, swapType, jettonAmount);
 
-            JSONObject jsonResponse = new JSONObject();
-            jsonResponse.put("status", "success");
-            jsonResponse.put("jettonA", jettonA);
-            jsonResponse.put("jettonB", jettonB);
-            jsonResponse.put("swapType", swapType);
-            jsonResponse.put("jettonAmount", jettonAmount);
+            if (direction.equals("buy")) {
+                swapServiceImpl.desustSwapBuy(jettonA, jettonB, route, jettonAmount);
+            } else {
+                swapServiceImpl.desustSwapSell(jettonA, jettonB, route, jettonAmount);
+            }
 
-            out.println(jsonResponse.toString());
+            SwapResponse success = new SwapResponse();
+            success.setStatus("success");
+            success.setDirection(direction);
+            success.setRoute(route);
+            success.setJettonA(jettonA);
+            success.setJettonB(jettonB);
+            success.setJettonAmount(jettonAmount.toString());
+            out.println(new JSONObject(success).toString());
 
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            JSONObject error = new JSONObject();
-            error.put("status", "error");
-            error.put("message", e.getMessage());
-            out.println(error.toString());
+            SwapResponse error = new SwapResponse();
+            error.setStatus("error");
+            error.setMessage(e.getMessage());
+            out.println(new JSONObject(error).toString());
         }
     }
 }

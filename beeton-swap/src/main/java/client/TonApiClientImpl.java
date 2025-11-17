@@ -14,7 +14,6 @@ public class TonApiClientImpl implements TonApiClient {
     private static final String BASE_URL = "https://tonapi.io/v2/";
     private final HttpClient client = HttpClient.newHttpClient();
 
-
     public String getJettonWalletAddress(String jettonMinterAddress, Address walletAddress) {
         String body = String.format("""
                 {
