@@ -11,6 +11,7 @@ import org.ton.ton4j.address.Address;
 import client.TonApiClient;
 import wrappers.Wallet;
 import model.SwapResponse;
+import model.Tuple;
 
 
 public class SwapServiceImpl {
@@ -60,6 +61,9 @@ public class SwapServiceImpl {
             }
 
             String jettonAWalletAddress = this.tonApiClient.getJettonWalletAddress(jettonA, this.wallet.getWalletAddress());
+            
+            System.out.println("Wallet address:" + jettonAWalletAddress);
+            System.out.println("jettonA address:" + jettonA);
 
             Cell jettonSwapBody = this.buildJettonSwapBody(
                     jettonAmount,
@@ -72,7 +76,8 @@ public class SwapServiceImpl {
                     Address.of(this.wallet.getWalletAddress()),
                     null,
                     null,
-                    null);
+                    null
+            );
 
             Cell jettonTransferBody = this.buildJettonTransferBody(
                     Address.of(vaultAddress),
@@ -81,7 +86,8 @@ public class SwapServiceImpl {
                     Address.of(this.wallet.getWalletAddress()),
                     null,
                     BigInteger.valueOf(250_000_000L),
-                    jettonSwapBody);
+                    jettonSwapBody
+            );
 
             WalletV4R2Config walletSendConfig = (WalletV4R2Config) this.wallet.buildConfig(
                     Address.of(jettonAWalletAddress),
@@ -95,13 +101,10 @@ public class SwapServiceImpl {
 
             this.wallet.sendMessage(walletSendConfig);
 
-            resp.setStatus("success");
-            resp.setDirection("sell");
-            resp.setRoute(swapType);
-            resp.setJettonA(jettonA);
-            resp.setJettonB(jettonB);
-            resp.setJettonAmount(jettonAmount.toString());
-            resp.setMessage("Transaction sent successfully");
+            Thread.sleep(10000);
+            Tuple<String, String> tradeInfo = this.tonApiClient.getAccountTrades(wallet.getWalletAddress().toString());
+
+            fillSuccessResponse(resp, "sell", swapType, jettonA, jettonB, jettonAmount, tradeInfo, "Transaction sent successfully");
             return resp;
 
         } catch (Exception e) {
@@ -128,13 +131,11 @@ public class SwapServiceImpl {
                 poolAddressFirstStep = this.tonApiClient.getPoolAddress(DEDUST_CONTRACT_ADDRESS, assetNative, assetJettonA);
             } else if (swapType.equals("multi")) {
                 this.buyViaJetton(jettonA, assetJettonA, assetJettonB, assetNative, jettonAmount);
-                resp.setStatus("success");
-                resp.setDirection("buy");
-                resp.setRoute("multi");
-                resp.setJettonA(jettonA);
-                resp.setJettonB(jettonB);
-                resp.setJettonAmount(jettonAmount.toString());
-                resp.setMessage("Transaction (multi) sent successfully");
+                
+                Thread.sleep(10000);
+                Tuple<String, String> tradeInfo = this.tonApiClient.getAccountTrades(wallet.getWalletAddress().toString());
+
+                fillSuccessResponse(resp, "buy", "multi", jettonA, jettonB, jettonAmount, tradeInfo, "Transaction (multi) sent successfully");
                 return resp;
             } else {
                 resp.setStatus("error");
@@ -152,11 +153,14 @@ public class SwapServiceImpl {
                     0,
                     Address.of(this.wallet.getWalletAddress()),
                     null,
-                    null);
+                    null
+                );
 
-            WalletV4R2Config walletSendConfig = (WalletV4R2Config) this.wallet.buildConfig(
+                BigInteger sendAmount = jettonAmount.add(BigInteger.valueOf(100_000_000L));
+
+                WalletV4R2Config walletSendConfig = (WalletV4R2Config) this.wallet.buildConfig(
                     Address.of(vaultAddress),
-                    BigInteger.valueOf(250_000_000L),
+                    sendAmount,
                     wallet.asWalletContract().getSeqno(),
                     698983191L,
                     "comment",
@@ -166,15 +170,11 @@ public class SwapServiceImpl {
 
             this.wallet.sendMessage(walletSendConfig);
 
-            resp.setStatus("success");
-            resp.setDirection("buy");
-            resp.setRoute(swapType);
-            resp.setJettonA(jettonA);
-            resp.setJettonB(jettonB);
-            resp.setJettonAmount(jettonAmount.toString());
-            resp.setMessage("Transaction sent successfully");
-            return resp;
+            Thread.sleep(10000);
+            Tuple<String, String> tradeInfo = this.tonApiClient.getAccountTrades(wallet.getWalletAddress().toString());
 
+            fillSuccessResponse(resp, "buy", swapType, jettonA, jettonB, jettonAmount, tradeInfo, "Transaction sent successfully");
+            return resp;
         } catch (Exception e) {
             resp.setStatus("error");
             resp.setMessage("Swap buy failed: " + e.getMessage());
@@ -260,6 +260,31 @@ public class SwapServiceImpl {
                 jettonTransferBody);
 
         this.wallet.sendMessage(walletSendConfig);
+    }
+
+    private void fillSuccessResponse(
+            SwapResponse resp,
+            String direction,
+            String route,
+            String jettonA,
+            String jettonB,
+            BigInteger jettonAmount,
+            Tuple<String, String> tradeInfo,
+            String message
+    ) {
+        resp.setStatus("success");
+        resp.setDirection(direction);
+        resp.setRoute(route);
+        resp.setJettonA(jettonA);
+        resp.setJettonB(jettonB);
+        resp.setJettonAmount(jettonAmount != null ? jettonAmount.toString() : null);
+
+        if (tradeInfo != null) {
+            resp.setAmountIn(tradeInfo.first);
+            resp.setAmountOut(tradeInfo.second);
+        }
+
+        resp.setMessage(message);
     }
 
     private Cell buildJettonTransferBody(

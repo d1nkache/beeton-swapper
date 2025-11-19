@@ -16,7 +16,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>21</maven.compiler.release>
+        <maven.compiler.release>17</maven.compiler.release>
         <servlet.version>6.0.0</servlet.version> <!-- Jakarta EE 10 -->
         <json.version>20240303</json.version>
         <swagger.version>2.2.22</swagger.version> <!-- Swagger Core Jakarta -->
@@ -97,13 +97,13 @@
         <finalName>beeton-swap-api</finalName>
 
         <plugins>
-            <!-- ✅ Компиляция под Java 21 -->
+            <!-- ✅ Компиляция под Java 17 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <release>21</release>
+                    <release>17</release>
                 </configuration>
             </plugin>
 

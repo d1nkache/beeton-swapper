@@ -8,7 +8,6 @@ import java.math.BigInteger;
 
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -23,14 +22,9 @@ import wrappers.WalletImpl;
 import model.SwapResponse;
 
 
-@WebServlet("/swap/desust")
 public class SwapServlet extends HttpServlet {
 
     private final List<String> mnemonic = List.of(
-        "crush", "claim", "fire", "riot", "piano", "dog", "train", "local",
-        "update", "wise", "helmet", "caution", "judge", "stove", "census",
-        "pride", "tonight", "eternal", "cruel", "chaos", "arrive", "planet",
-        "poverty", "museum"
     );
 
     private final WalletImpl wallet = new WalletImpl(mnemonic, false);
@@ -45,7 +39,7 @@ public class SwapServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        PrintWriter out = response.getWriter();
+        PrintWriter out = response.getWriter(); 
 
         try {
             StringBuilder sb = new StringBuilder();
@@ -92,22 +86,16 @@ public class SwapServlet extends HttpServlet {
                 return;
             }
 
-            BigInteger jettonAmount = new BigInteger(jettonAmountStr);
+            BigInteger jettonAmount   = new BigInteger(jettonAmountStr);
+            SwapResponse swapResponse = null;
 
             if (direction.equals("buy")) {
-                swapServiceImpl.desustSwapBuy(jettonA, jettonB, route, jettonAmount);
+                swapResponse = swapServiceImpl.desustSwapBuy(jettonA, jettonB, route, jettonAmount);
             } else {
-                swapServiceImpl.desustSwapSell(jettonA, jettonB, route, jettonAmount);
+                swapResponse = swapServiceImpl.desustSwapSell(jettonA, jettonB, route, jettonAmount);
             }
 
-            SwapResponse success = new SwapResponse();
-            success.setStatus("success");
-            success.setDirection(direction);
-            success.setRoute(route);
-            success.setJettonA(jettonA);
-            success.setJettonB(jettonB);
-            success.setJettonAmount(jettonAmount.toString());
-            out.println(new JSONObject(success).toString());
+            out.println(new JSONObject(swapResponse).toString());
 
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

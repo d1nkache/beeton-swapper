@@ -65,16 +65,15 @@ paths:
               examples:
                 ok:
                   value:
-                    status: success
-                    direction: buy
-                    route: native
-                    jettonA: "0:1111222233334444..."
-                    jettonB: "0:9999888877776666..."
-                    jettonAmount: "1000000000"
-                    tx:
-                      walletAddress: "EQC…"
-                      seqno: 12345
-                      comment: "comment"
+                      status: success
+                      direction: buy
+                      route: native
+                      jettonA: "0:1111222233334444..."
+                      jettonB: "0:9999888877776666..."
+                      jettonAmount: "1000000000"
+                      amountIn: "285000000"
+                      amountOut: "26355686"
+                      message: "Transaction sent successfully"
         '400':
           description: Ошибка запроса — отсутствуют или некорректны обязательные параметры
           content:
@@ -171,7 +170,7 @@ components:
 
     SwapSuccessResponse:
       type: object
-      required: [status, direction, route, jettonA, jettonB, jettonAmount]
+      required: [status, direction, route, jettonA, jettonB, jettonAmount, amountIn, amountOut, message]
       properties:
         status:
           type: string
@@ -187,19 +186,13 @@ components:
           $ref: '#/components/schemas/AddressHex'
         jettonAmount:
           $ref: '#/components/schemas/AmountAtomic'
-        tx:
-          type: object
-          description: Служебная информация об отправленной транзакции (если доступна)
-          properties:
-            walletAddress:
-              type: string
-              example: "EQBfBWT7X2BHg9tXAxzhz2aKiNTU1tpt5NsiK0uSDW_YAJ67"
-            seqno:
-              type: integer
-              example: 698983191
-            comment:
-              type: string
-              example: "comment"
+        amountIn:
+          $ref: '#/components/schemas/AmountAtomic'
+        amountOut:
+          $ref: '#/components/schemas/AmountAtomic'
+        message:
+          type: string
+          example: "Transaction sent successfully"
 
     ErrorResponse:
       type: object

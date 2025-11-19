@@ -9,6 +9,8 @@ public class SwapResponse {
     private String jettonA;   
     private String jettonB;  
     private String jettonAmount;
+    private String amountIn;
+    private String amountOut;
     private String message;   
 
     public SwapResponse() {}
@@ -22,6 +24,22 @@ public class SwapResponse {
         this.jettonB      = jettonB;
         this.jettonAmount = jettonAmount;
         this.message      = message;
+    }
+
+    public String getAmountIn() {
+        return amountIn;
+    }
+
+    public void setAmountIn(String amountIn) {
+        this.amountIn = amountIn;
+    }
+
+    public String getAmountOut() {
+        return amountOut;
+    }
+
+    public void setAmountOut(String amountOut) {
+        this.amountOut = amountOut;
     }
 
     public String getStatus() {

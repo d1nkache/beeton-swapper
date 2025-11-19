@@ -15,10 +15,6 @@
 //         System.out.println("Starting Wallet Test...");
 
 //         List<String> mnemonic = List.of(
-//             "crush", "claim", "fire", "riot", "piano", "dog", "train", "local",
-//             "update", "wise", "helmet", "caution", "judge", "stove", "census",
-//             "pride", "tonight", "eternal", "cruel", "chaos", "arrive", "planet",
-//             "poverty", "museum"
 //         );
 
 
@@ -32,30 +28,30 @@
 
 //         WalletConfig config = wallet.buildConfig(
 //                 Address.of("0QB6zEKUZAKBTboZvhXo0tALkzkHieuGsfMfisrBFIX5muxX"),           // адрес получателя
-//                 BigInteger.valueOf(1_000_000L),                                               // 1 TON = 1e9 нанотонов
+//                 BigInteger.valueOf(1_000_000L),                                           // 1 TON = 1e9 нанотонов
 //                 seqno,                                                                           
 //                 698983191L,                                                              // walletId
-//                 "Test message",                                                           // 
-//                 true,                                                                      // bounce
-//                 SendMode.PAY_GAS_SEPARATELY                                                       // режим отправки
+//                 "Test message",                                                          // 
+//                 true,                                                                    // bounce
+//                 SendMode.PAY_GAS_SEPARATELY                                              // режим отправки
 //         );
 
 //         var response = wallet.sendMessage(config);
 //         System.out.println("Response: " + response.second);
 
-//         // SwapServiceImpl swapServiceImpl = new SwapServiceImpl(wallet, new TonApiClientImpl());
-//         // swapServiceImpl.desustSwapSell(
-//         //     "EQCi9nWtRY5rdEWkZIPOe_9n1WXog8ObXCIf6RGmwFCnrrT8",
-//         //     "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
-//         //     "native",
-//         //     BigInteger.valueOf(100_000_000L)
-//         // );
+        // SwapServiceImpl swapServiceImpl = new SwapServiceImpl(wallet, new TonApiClientImpl());
+        // swapServiceImpl.desustSwapSell(
+        //     "EQCi9nWtRY5rdEWkZIPOe_9n1WXog8ObXCIf6RGmwFCnrrT8",
+        //     "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
+        //     "native",
+        //     BigInteger.valueOf(100_000_000L)
+        // );
 
-//         // swapServiceImpl.desustSwapBuy(
-//         //     "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
-//         //     "EQCi9nWtRY5rdEWkZIPOe_9n1WXog8ObXCIf6RGmwFCnrrT8",
-//         //     "multi",
-//         //     BigInteger.valueOf(100_000L)
-//         // );
+        // swapServiceImpl.desustSwapBuy(
+        //     "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
+        //     "EQCi9nWtRY5rdEWkZIPOe_9n1WXog8ObXCIf6RGmwFCnrrT8",
+        //     "multi",
+        //     BigInteger.valueOf(100_000L)
+        // );
 //     }
 // }

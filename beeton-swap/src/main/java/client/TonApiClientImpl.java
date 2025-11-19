@@ -9,9 +9,12 @@ import java.net.http.HttpResponse;
 import org.json.JSONObject;
 import org.ton.ton4j.address.Address;
 
+import model.Tuple;
 
 public class TonApiClientImpl implements TonApiClient {
-    private static final String BASE_URL = "https://tonapi.io/v2/";
+    private static final String BASE_TONAPI_URL = "https://tonapi.io/v2/";
+    private static final String BASE_DEDUST_URL = "https://api.dedust.io/v2/";
+
     private final HttpClient client = HttpClient.newHttpClient();
 
     public String getJettonWalletAddress(String jettonMinterAddress, Address walletAddress) {
@@ -27,7 +30,7 @@ public class TonApiClientImpl implements TonApiClient {
                 """, walletAddress.toString(false)
         );
 
-        String url = BASE_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_wallet_address?decode=true";
+        String url = BASE_TONAPI_URL + "blockchain/accounts/" + jettonMinterAddress + "/methods/get_wallet_address?decode=true";
 
         HttpRequest request = HttpRequest.newBuilder()
             .uri(URI.create(url))
@@ -65,7 +68,7 @@ public class TonApiClientImpl implements TonApiClient {
     public String getVaultAddress(String dedustContractAddress, String jettonHexArg) {
         String url = String.format(
             "%sblockchain/accounts/%s/methods/get_vault_address?args=%s",
-            BASE_URL, dedustContractAddress, jettonHexArg
+            BASE_TONAPI_URL, dedustContractAddress, jettonHexArg
         );
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -100,7 +103,7 @@ public class TonApiClientImpl implements TonApiClient {
     public String getPoolAddress(String dedustContractAddress, String from, String to) {
         int poolType = 0;
 
-        String url = BASE_URL
+        String url = BASE_TONAPI_URL
                 + "blockchain/accounts/"
                 + dedustContractAddress
                 + "/methods/get_pool_address?decode=true"
@@ -132,6 +135,46 @@ public class TonApiClientImpl implements TonApiClient {
         } catch (IOException | InterruptedException ex) {
             System.out.println("ERROR - " + ex.getMessage());
             return "ERROR";
+        }
+    }
+
+    public Tuple<String, String> getAccountTrades(String walletAddress) {
+        String url = BASE_DEDUST_URL 
+                + "accounts/"
+                + walletAddress
+                + "/trades";
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("accept", "application/json")
+            .GET()
+            .build();
+        
+        try {
+            HttpResponse<String> httpResponse = this.client.send(request, HttpResponse.BodyHandlers.ofString());
+            String response = httpResponse.body();
+
+            System.out.println("GET " + url);
+            System.out.println("HTTP " + httpResponse.statusCode() + " :: " + response);
+            
+            if (httpResponse.statusCode() != 200) {
+                return new Tuple<String, String>("ERROR", "ERROR");
+            }
+            org.json.JSONArray arr = new org.json.JSONArray(response);
+
+            if (arr.length() == 0) {
+                // No trades yet
+                return new Tuple<String, String>("0", "0");
+            }
+
+            JSONObject last = arr.getJSONObject(arr.length() - 1);
+            
+            String amntIn  = last.getString("amountIn");
+            String amntOut = last.getString("amountOut");
+
+            return new Tuple<String, String>(amntIn, amntOut);
+        } catch (IOException | InterruptedException ex) {
+           System.out.println("ERROR - " + ex.getMessage());
+           return new Tuple<String, String>("ERROR", "ERROR");
         }
     }
 

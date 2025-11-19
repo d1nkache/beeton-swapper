@@ -24,8 +24,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 public class WalletImpl implements Wallet {
-    // ↓ Tonlib больше не нужен
-    // private Tonlib tonLib;
     private AdnlLiteClient adnl;
 
     private byte[] publicKey;
@@ -33,11 +31,6 @@ public class WalletImpl implements Wallet {
     private boolean isTestnet;
 
     public Address walletAddress;
-
-    // === ТВОИ ПАРАМЕТРЫ LS ===
-    private static final int    LS_IP_INT   = 822_946_890; // 49.13.44.74
-    private static final int    LS_PORT     = 30116;
-    private static final String LS_PUBKEY_B64 = "MYJuJ+nIvKKHlrh/6V8MNtWdFFhE5JA/8fR6jo2vqDI=";
 
     public WalletImpl(List<String> mnemonic, boolean isTestnet) {
         TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromUrl("https://dton.io/ls/6736996077/31826E27E9C8BCA28796B87FE95F0C36D59D145844E4903FF1F47A8E8DAFA832/global.config.json");
@@ -67,10 +60,9 @@ public class WalletImpl implements Wallet {
     public WalletV4R2 asWalletContract() {
         TweetNaclFast.Signature.KeyPair keyPair = TweetNaclFast.Signature.keyPair_fromSeed(this.secretKey);
 
-        // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: вместо .tonlib(this.tonLib) — .adnl(this.adnl)
         return WalletV4R2.builder()
                 .keyPair(keyPair)
-                .adnlLiteClient(this.adnl)   // <-- если в твоей версии доступно
+                .adnlLiteClient(this.adnl)
                 .wc(0)
                 .walletId(698983191L)
                 .build();
