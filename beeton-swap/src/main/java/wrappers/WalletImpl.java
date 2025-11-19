@@ -33,7 +33,7 @@ public class WalletImpl implements Wallet {
     public Address walletAddress;
 
     public WalletImpl(List<String> mnemonic, boolean isTestnet) {
-        TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromUrl("https://dton.io/ls/6736996077/31826E27E9C8BCA28796B87FE95F0C36D59D145844E4903FF1F47A8E8DAFA832/global.config.json");
+        TonGlobalConfig tonGlobalConfig = TonGlobalConfig.loadFromUrl("");
 
         try {
             this.adnl = AdnlLiteClient.builder().globalConfig(tonGlobalConfig).build();
