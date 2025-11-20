@@ -19,6 +19,7 @@ Content-Type: application/json
 | **jettonA** | `string` | ✅ | Адрес токена, который **отдаётся** при `sell`, или токена, который **покупается** при `buy`. <br>Формат: `workchain:hash` (64 hex-символа), например:<br>`0:111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000` |
 | **jettonB** | `string` | ✅ | Адрес токена, который **получается** после обмена. <br>Для обменов с **native (TON)** можно передавать любое значение. |
 | **jettonAmount** | `string` | ✅ | Количество токенов в **атомарных единицах**. <br>Например `"1000000000"` соответствует 1 токену, если у него 9 знаков после запятой. |
+| **mnemonic** | `string` | ✅ | BIP-39 мнемоническая фраза (24 слова, пробел-разделённые). Используется серверным кошельком для подписания транзакции. **Осторожно:** мнемоника — секрет, не храните и не пересылайте её в публичных каналах. |
 
 
 ---
@@ -37,7 +38,8 @@ curl -X POST 'http://localhost:8080/beeton-swap-api/swap/desust'   -H 'Content-T
     "route": "multi",
     "jettonA": "0:111122223333444455556666777788889999aaaabbbbccccddddeeeeffff0000",
     "jettonB": "0:9999888877776666555544443333222211110000ffffeeeeddddccccbbbbaaaa",
-    "jettonAmount": "1000000000"
+    "jettonAmount": "1000000000",
+    "mnemonic": "flush wolf spring claim shy mouse vibrant unfold trend call sea kick mechanic syrup winner crumble fun celery group high uncover miss deputy social"
   }'
 ```
 
@@ -60,7 +62,8 @@ curl -X POST 'http://localhost:8080/beeton-swap-api/swap/desust'   -H 'Content-T
     "route": "multi",
     "jettonA": "0:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "jettonB": "0:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    "jettonAmount": "2500000000"
+    "jettonAmount": "2500000000",
+    "mnemonic": "flush wolf spring claim shy mouse vibrant unfold trend call sea kick mechanic syrup winner crumble fun celery group high uncover miss deputy social"
   }'
 ```
 
@@ -83,7 +86,8 @@ curl -X POST 'http://localhost:8080/beeton-swap-api/swap/desust'   -H 'Content-T
     "route": "native",
     "jettonA": "0:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "jettonB": "0:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    "jettonAmount": "500000000"
+    "jettonAmount": "500000000",
+    "mnemonic": "flush wolf spring claim shy mouse vibrant unfold trend call sea kick mechanic syrup winner crumble fun celery group high uncover miss deputy social"
   }'
 ```
 

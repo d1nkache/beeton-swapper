@@ -1,6 +1,7 @@
 package servlets;
 
 import java.util.List;
+import java.util.Arrays;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.BufferedReader;
@@ -24,11 +25,6 @@ import model.SwapResponse;
 
 public class SwapServlet extends HttpServlet {
 
-    private final List<String> mnemonic = List.of(
-    );
-
-    private final WalletImpl wallet = new WalletImpl(mnemonic, false);
-    private final SwapServiceImpl swapServiceImpl = new SwapServiceImpl(wallet, new TonApiClientImpl());
 
     @Operation(summary = "Совершить swap", description = "Выполняет обмен jetton-токенов")
     @ApiResponse(responseCode = "200", description = "Успешный обмен")
@@ -58,6 +54,31 @@ public class SwapServlet extends HttpServlet {
             String direction       = jsonRequest.optString("direction", null);
             String route           = jsonRequest.optString("route", null);
             String jettonAmountStr = jsonRequest.optString("jettonAmount", null);
+            String mnemonic        = jsonRequest.optString("mnemonic", null);
+
+            if (mnemonic == null || mnemonic.trim().isEmpty()) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                SwapResponse resp = new SwapResponse();
+                resp.setStatus("error");
+                resp.setMessage("Missing parameter: mnemonic");
+                out.println(new JSONObject(resp).toString());
+
+                return;
+            }
+
+            List<String> mnemonicWords = Arrays.asList(mnemonic.trim().split("\\s+"));
+            if (mnemonicWords.size() != 24) {
+                response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                SwapResponse resp = new SwapResponse();
+                resp.setStatus("error");
+                resp.setMessage("Invalid mnemonic: expected 24 words");
+                out.println(new JSONObject(resp).toString());
+
+                return;
+            }
+
+            WalletImpl wallet = new WalletImpl(mnemonicWords, false);
+            SwapServiceImpl swapServiceImpl = new SwapServiceImpl(wallet, new TonApiClientImpl());
 
             if (jettonA == null || jettonB == null || route == null || direction == null || jettonAmountStr == null) {
                 response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -65,6 +86,7 @@ public class SwapServlet extends HttpServlet {
                 resp.setStatus("error");
                 resp.setMessage("Missing parameters: jettonA, jettonB, direction, route, jettonAmount");
                 out.println(new JSONObject(resp).toString());
+
                 return;
             }
 
@@ -74,6 +96,7 @@ public class SwapServlet extends HttpServlet {
                 resp.setStatus("error");
                 resp.setMessage("Invalid direction (must be 'buy' or 'sell')");
                 out.println(new JSONObject(resp).toString());
+
                 return;
             }
 
@@ -83,6 +106,7 @@ public class SwapServlet extends HttpServlet {
                 resp.setStatus("error");
                 resp.setMessage("Invalid route (must be 'native' or 'multi')");
                 out.println(new JSONObject(resp).toString());
+                
                 return;
             }
 

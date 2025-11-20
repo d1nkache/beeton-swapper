@@ -1,0 +1,5 @@
+> запуск
+```
+docker build -t beeton-swap .
+docker run -p 8080:8080 beeton-swap
+```
